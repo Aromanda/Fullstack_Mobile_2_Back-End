@@ -23,16 +23,19 @@ module Api
     def get_account
       user_id = params[:id]
       user_type = params[:type]
-
       user = User.find_by(id: user_id)
+      puts "user_id", user_id
+      puts "user_type", user_type
+      puts "user", user
+
       if user.nil?
         render json: { error: "User not found" }, status: :not_found
         return
       end
 
-      case user_type
-      when "customer"
+      if user_type === "customer"
         customer = Customer.find_by(user_id: user.id)
+        puts "customer", customer
         if customer.nil?
           render json: { error: "Customer not found" }, status: :not_found
           return
@@ -40,11 +43,13 @@ module Api
 
         render json: {
           email: user.email,
-          customer_email: customer.email,
-          customer_phone: customer.phone
+          account_email: customer.email,
+          account_phone: customer.phone
         }
-      when "courier"
-        courier = Courier.find_by(user_id: user.id)
+      elsif user_type === "courier"
+        puts "Im here"
+        courier = Courier.find_by(user_id: user&.id)
+        puts "courier", courier
         if courier.nil?
           render json: { error: "Courier not found" }, status: :not_found
           return
@@ -52,8 +57,8 @@ module Api
 
         render json: {
           email: user.email,
-          courier_email: courier.email,
-          courier_phone: courier.phone
+          account_email: courier.email,
+          account_phone: courier.phone
         }
       else
         render json: { error: "Invalid user type" }, status: :bad_request
