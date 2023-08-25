@@ -69,6 +69,9 @@ module Api
     # Currently only covers customer and courier types
     def update_account
       user_id = params[:id]
+      user_type = params[:type]
+      data = JSON.parse(request.body.read)
+
       user = User.find_by(id: user_id)
 
       if user.nil?
@@ -76,37 +79,41 @@ module Api
         return
       end
 
-      data = JSON.parse(request.body.read)
-
-      if data.key?("customer_email") || data.key?("customer_phone")
+      if user_type === "customer"
         customer = Customer.find_by(user_id: user.id)
         if customer.nil?
           render json: { error: "Customer not found" }, status: :not_found
           return
         end
 
-        customer.update(
-          email: data["customer_email"] || customer.email,
-          phone: data["customer_phone"] || customer.phone
-        )
-      elsif data.key?("courier_email") || data.key?("courier_phone")
-        courier = Courier.find_by(user_id: user.id)
+        # Update customer's email and phone
+        customer.update(email: data["account_email"], phone: data["account_phone"])
+
+        render json: {
+          message: "Account information updated successfully",
+          email: user.email,
+          account_email: customer.email,
+          account_phone: customer.phone
+        }
+      elsif user_type === "courier"
+        courier = Courier.find_by(user_id: user&.id)
         if courier.nil?
           render json: { error: "Courier not found" }, status: :not_found
           return
         end
 
-        courier.update(
-          email: data["courier_email"] || courier.email,
-          phone: data["courier_phone"] || courier.phone
-        )
+        # Update courier's email and phone
+        courier.update(email: data["account_email"], phone: data["account_phone"])
+
+        render json: {
+          message: "Account information updated successfully",
+          email: user.email,
+          account_email: courier.email,
+          account_phone: courier.phone
+        }
       else
-        render json: { error: "Invalid update data" }, status: :bad_request
-        return
+        render json: { error: "Invalid user type" }, status: :bad_request
       end
-
-      render json: { success: true }
     end
-
   end
 end
